@@ -86,6 +86,7 @@
     lossHistory: [],
     stepCount: 0,
     qualityMet: false,
+    pretrainedActive: false, // true only while state.model IS the fetched pretrained model, not something trained in this tab
 
     generating: false,
     attempts: 0,
@@ -154,7 +155,7 @@
     els.btnTrain.disabled = false;
     els.trainStatus.textContent = 'Dataset loaded. Set your parameters and train.';
 
-    await autoLoadPretrained();
+    await loadPretrainedFromServer();
     await loadShowcase();
   }
 
@@ -275,6 +276,7 @@
     state.lossHistory = [];
     state.stepCount = 0;
     state.qualityMet = false;
+    state.pretrainedActive = false;
 
     const hidden = parseInt(els.hpHidden.value, 10);
     const T = parseInt(els.hpT.value, 10);
@@ -395,7 +397,7 @@
   // ---------------- model source: use existing vs. train your own ----------------
 
   // Shared by both ways of getting a pretrained model in: the auto-fetched
-  // data/weights.json (autoLoadPretrained) and the manual file picker
+  // data/weights.json (loadPretrainedFromServer) and the manual file picker
   // (handleLoadWeightsFile). bundle.meta carries the exact buildModel()
   // config the checkpoint was trained with — a model is built to match it
   // exactly, then the weights are handed to DiffusionModel.loadWeights().
@@ -429,6 +431,7 @@
     DiffusionModel.loadWeights(model, bundle);
 
     if (state.trainTensorAll) { state.trainTensorAll.dispose(); state.trainTensorAll = null; }
+    state.pretrainedActive = true;
     state.model = model;
     state.schedule = DiffusionModel.makeSchedule(meta.timesteps || parseInt(els.hpT.value, 10));
     state.qualityMet = true;
@@ -457,13 +460,17 @@
     }
   }
 
-  // Tried automatically on page load: if this repo has a trained model
-  // committed (see README_LOCAL.md - either the chunked data/weights/
-  // directory train.py now produces, or a single legacy data/weights.json),
-  // visitors get it immediately with no action needed. Absence of either
-  // is completely normal (most forks won't have trained+committed one) and
-  // falls back to "Train your own" - never treated as an error.
-  async function autoLoadPretrained() {
+  // Fetches and applies whatever pretrained model this repo has committed
+  // (the chunked data/weights/ directory train.py now produces by default,
+  // or a single legacy data/weights.json). Called once automatically on
+  // page load, and again any time "Use existing model" is clicked while
+  // it isn't already the active model (e.g. after switching to "Train
+  // your own" and training something in this tab) - so the button
+  // actually does something, not just toggles which panel is visible.
+  // Absence of either file is completely normal (most forks won't have
+  // trained+committed one yet) and falls back to "Train your own" -
+  // never treated as an error.
+  async function loadPretrainedFromServer() {
     try {
       const bundle = await fetchChunkedWeights('data/weights/manifest.json');
       els.pretrainedStatus.textContent = applyWeightsBundle(bundle, 'data/weights/ (chunked)');
@@ -668,7 +675,13 @@
     await runTrainingSteps(more);
   });
   els.loadWeightsFile.addEventListener('change', handleLoadWeightsFile);
-  els.btnModeExisting.addEventListener('click', () => setMode('existing'));
+  els.btnModeExisting.addEventListener('click', async () => {
+    if (state.pretrainedActive) {
+      setMode('existing'); // already loaded and active - just show it, no need to refetch
+    } else {
+      await loadPretrainedFromServer(); // e.g. switching back after training something in this tab
+    }
+  });
   els.btnModeTrain.addEventListener('click', () => setMode('train'));
   els.btnGenerate.addEventListener('click', startGenerating);
   els.btnStop.addEventListener('click', () => {

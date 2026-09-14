@@ -65,9 +65,10 @@ const weightsBundle = {
 };
 
 // This time, data/weights.json IS "committed" - the fetch stub serves it from the start.
+let weightsJsonFetchCount = 0;
 global.fetch = async (url) => {
   if (url.includes('dataset.json')) return { ok: true, json: async () => dataset };
-  if (url.includes('weights.json')) return { ok: true, json: async () => weightsBundle };
+  if (url.includes('weights.json')) { weightsJsonFetchCount++; return { ok: true, json: async () => weightsBundle }; }
   return { ok: false, status: 404 }; // showcase.json etc. - fine to be absent
 };
 
@@ -105,8 +106,20 @@ async function main() {
   const modeNowTrain = $('mode-train-content').hidden === false && $('mode-existing-content').hidden === true;
   console.log('switched to "Train your own" -> Train button re-enabled:', trainReenabled, '| mode shown:', modeNowTrain);
 
-  if (modeIsExisting && generateReady && statusMentionsParams && trainReenabled && modeNowTrain) {
-    console.log('PASS - auto-load works, and mode switching back to train recovers correctly');
+  // Clicking back to "Use existing model" without having actually trained
+  // anything should NOT re-fetch (the pretrained model is still the active
+  // one - only trainModel() itself invalidates that) - it's still 1 so far.
+  const fetchCountBeforeClick = weightsJsonFetchCount;
+  $('btn-mode-existing').dispatchEvent(new window.Event('click'));
+  await sleep(50);
+  const noRedundantFetch = weightsJsonFetchCount === fetchCountBeforeClick;
+  const backToExisting = $('mode-existing-content').hidden === false;
+  console.log('clicked back to "Use existing model" (nothing was trained) -> no redundant fetch:',
+    noRedundantFetch, `(count stayed at ${weightsJsonFetchCount})`, '| showing existing panel:', backToExisting);
+
+  if (modeIsExisting && generateReady && statusMentionsParams && trainReenabled && modeNowTrain
+      && noRedundantFetch && backToExisting) {
+    console.log('PASS - auto-load works, mode switching recovers correctly, and no wasted re-fetches');
   } else {
     console.log('FAIL');
     process.exit(1);

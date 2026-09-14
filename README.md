@@ -152,7 +152,10 @@ tile highlight (green is reserved for an actual match).
 `js/build.js` exports `window.BUILD_ID`, shown in the topbar. Bump it every
 time you push, in the same commit as the change — it's how you confirm a
 deploy actually landed, independent of what a browser or CDN cache thinks is
-current.
+current. `/VERSION` at the repo root is the single source of truth for the
+current version number (currently `2.1`) — `js/build.js` and
+`package.json`'s `version` field are kept in sync with it by hand (there's
+no build step to do this automatically). Bump all three together.
 
 ## How it works
 
@@ -312,6 +315,7 @@ it.
 ## Files
 
 ```
+VERSION                            current version number (2.1) - see js/build.js
 index.html                        page markup
 css/style.css                     styling
 js/build.js                       window.BUILD_ID — bump on every deploy, shown in the topbar
