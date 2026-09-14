@@ -1,5 +1,12 @@
-name: Build and deploy to GitHub Pages
+name: Deploy to GitHub Pages
 
+# This site is fully static once data/dataset.json (and, if present,
+# data/weights/ + data/showcase.json) are committed - all generated
+# locally via `python g.py` / `python train.py` / `python search.py`, never
+# rebuilt in CI. There is deliberately no "run scripts/build_dataset.js"
+# step here: that script's source folder (data/ascii_art_pack___small/) is
+# gitignored on purpose (regenerable, ~80MB of redundant raw files), so it
+# will never exist in a CI checkout - only run that script locally.
 on:
   push:
     branches: [main]
@@ -12,20 +19,26 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site as artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          node-version: 20
-      - run: node scripts/build_dataset.js
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
