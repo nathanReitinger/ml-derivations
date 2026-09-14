@@ -1,0 +1,1 @@
+{"meta": {"height": 10, "width": 20, "vocabSize": 2, "hidden": 128, "timeDim": 64, "bottleneckBlocks": 8, "bottleneckKernel": 7, "timesteps": 50, "step": 6743}, "numChunks": 2, "chunkFiles": ["part-000.txt", "part-001.txt"], "totalLength": 38007922}

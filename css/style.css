@@ -1,0 +1,496 @@
+:root{
+  /* ---- surface ---- */
+  --paper:#FFFFFF;
+  --paper-soft:#F5F5F9;
+  --ink:#15161D;
+  --ink-dim:#6A6E7A;
+  --line:rgba(21,22,29,0.09);
+
+  /* ---- glass ---- */
+  --glass:rgba(255,255,255,0.62);
+  --glass-strong:rgba(255,255,255,0.80);
+  --glass-border:rgba(255,255,255,0.75);
+
+  /* ---- accents ---- */
+  --violet:#6C63FF;
+  --violet-soft:rgba(108,99,255,0.14);
+  --teal:#149E8F;
+  --teal-soft:rgba(20,158,143,0.14);
+  --coral:#E85252;
+  --coral-soft:rgba(232,82,82,0.14);
+  --match:#1FA35E;
+  --match-soft:rgba(31,163,94,0.14);
+  --amber:#E8A23D;
+
+  /* Roslindale is a commercial typeface (displaay.co) — not something we can
+     fetch or redistribute. If you have a license, drop the woff2 files in
+     /fonts and uncomment the @font-face block near the bottom of this file;
+     it slots in ahead of Fraunces automatically since it's listed first. */
+  --font-display:'Roslindale Display','Fraunces',Georgia,'Iowan Old Style',serif;
+  --font-sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+
+  --radius-lg:28px;
+  --radius-md:20px;
+  --radius-sm:14px;
+
+  --shadow-panel:
+    inset 0 1px 0 rgba(255,255,255,0.7),
+    0 12px 30px -14px rgba(21,22,29,0.16);
+  --shadow-hero:
+    inset 0 1px 0 rgba(255,255,255,0.85),
+    0 30px 70px -24px rgba(108,99,255,0.30),
+    0 12px 30px -16px rgba(21,22,29,0.12);
+  --shadow-chip:0 2px 8px rgba(21,22,29,0.08);
+}
+
+*{ box-sizing:border-box; }
+
+html{ background:var(--paper); }
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-sans);
+  font-size:15.5px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+}
+
+/* ---- ambient background: soft blurred color behind the glass ---- */
+/* This is the one place color lives outside the UI itself — a quiet nod to
+   the model's own subject (noise resolving into signal) sitting behind the
+   crisp panels that show the resolved result. */
+.bg-scene{
+  position:fixed;
+  inset:0;
+  overflow:hidden;
+  z-index:-1;
+  pointer-events:none;
+}
+.bg-scene .blob{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(80px);
+}
+.bg-scene .b1{ width:520px; height:520px; left:-160px; top:-180px; background:var(--violet); opacity:0.20; }
+.bg-scene .b2{ width:460px; height:460px; right:-160px; top:40px; background:var(--teal); opacity:0.16; }
+.bg-scene .b3{ width:420px; height:420px; left:12%; bottom:-240px; background:var(--coral); opacity:0.12; }
+.bg-scene .b4{ width:380px; height:380px; right:6%; bottom:-200px; background:var(--amber); opacity:0.14; }
+
+.page{
+  max-width:960px;
+  margin:0 auto;
+  padding:28px 20px 64px;
+  position:relative;
+}
+
+a{ color:var(--violet); }
+
+button:focus-visible, summary:focus-visible, input:focus-visible, a:focus-visible{
+  outline:2px solid var(--violet);
+  outline-offset:2px;
+}
+
+/* ---- top bar ---- */
+.topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  padding:14px 22px;
+  margin-bottom:32px;
+  background:var(--glass);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid var(--glass-border);
+  border-radius:999px;
+  box-shadow:var(--shadow-panel);
+  position:sticky;
+  top:14px;
+  z-index:10;
+}
+@media (max-width:600px){ .topbar{ border-radius:26px; position:static; } }
+
+.brand{
+  font-family:var(--font-display);
+  font-weight:560;
+  font-size:20px;
+  letter-spacing:-0.01em;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--ink);
+}
+.brand-mark{ color:var(--violet); font-size:19px; }
+
+.readout{ display:flex; gap:8px; flex-wrap:wrap; }
+.readout-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 13px;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:999px;
+  font-size:12px;
+  color:var(--ink-dim);
+}
+.readout-value{
+  font-family:var(--font-mono);
+  font-weight:600;
+  color:var(--ink);
+}
+.readout-value.ok{ color:var(--match); }
+.readout-value.warn{ color:var(--coral); }
+
+/* ---- intro ---- */
+.intro{ max-width:620px; margin-bottom:32px; }
+.intro h1{
+  font-family:var(--font-display);
+  font-weight:520;
+  font-size:clamp(28px, 4.2vw, 40px);
+  line-height:1.2;
+  letter-spacing:-0.015em;
+  margin:0 0 16px;
+  color:var(--ink);
+}
+.intro p{ color:var(--ink-dim); margin:0; font-size:16px; line-height:1.65; max-width:58ch; }
+.intro .callout{
+  margin-top:16px;
+  padding:13px 18px;
+  background:var(--paper-soft);
+  border-left:3px solid var(--violet);
+  border-radius:0 14px 14px 0;
+  font-size:13.5px;
+  line-height:1.6;
+  color:var(--ink-dim);
+  max-width:56ch;
+}
+
+/* ---- panels ---- */
+.panel{
+  background:var(--glass);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-md);
+  padding:22px 24px;
+  margin-bottom:22px;
+  box-shadow:var(--shadow-panel);
+}
+.panel.hero{
+  background:var(--glass-strong);
+  border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-hero);
+  padding:26px 26px 24px;
+}
+.panel-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+}
+.panel-head h2{
+  font-family:var(--font-display);
+  font-size:19px;
+  font-weight:600;
+  margin:0;
+  color:var(--ink);
+}
+.mono-line{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-dim); margin:8px 0 0; }
+.gen-status{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-dim); }
+
+/* ---- filmstrip ---- */
+.filmstrip{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:14px;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+  scroll-behavior:smooth;
+  min-height:110px;
+  align-items:center;
+}
+.filmstrip:empty::before{
+  content:"Nothing generated yet.";
+  color:var(--ink-dim);
+  font-size:13px;
+  padding:0 4px;
+}
+.filmstrip canvas{
+  flex:0 0 auto;
+  image-rendering:pixelated;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--paper);
+  box-shadow:var(--shadow-chip);
+}
+.filmstrip canvas.is-match{
+  border-color:var(--match);
+  box-shadow:0 0 0 3px var(--match-soft), 0 6px 18px rgba(31,163,94,0.28);
+}
+
+/* ---- match threshold field (sits inline in the generation control row) ---- */
+.threshold-field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--ink-dim);
+  margin-left:auto;
+}
+.threshold-field input{
+  width:72px;
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--ink);
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:7px 9px;
+}
+@media (max-width:600px){ .threshold-field{ margin-left:0; } }
+
+/* ---- pretrained-weights file picker (sits inline next to Train model) ---- */
+.file-field{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--ink-dim);
+  padding:8px 13px;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:999px;
+  cursor:pointer;
+}
+.file-field:hover{ border-color:var(--violet); }
+.file-field input[type="file"]{
+  font-family:var(--font-sans);
+  font-size:12px;
+  max-width:150px;
+}
+
+/* ---- training quality-gate previews: a smaller, denser filmstrip nested ---- */
+/* inside a <details>, each tile paired with the SSIM score that produced it */
+.quality-gate{ border-color:rgba(232,162,61,0.35); }
+.quality-gate summary::before{ color:var(--amber); }
+.filmstrip.small{
+  min-height:64px;
+  padding:10px;
+  gap:10px;
+}
+.filmstrip.small:empty::before{ content:"No quality checks yet."; }
+.preview-tile{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  flex:0 0 auto;
+}
+.preview-score{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:var(--ink-dim);
+}
+.filmstrip canvas.is-close{
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px rgba(232,162,61,0.22), 0 6px 18px rgba(232,162,61,0.22);
+}
+
+/* One deliberate motion moment: a freshly generated tile popping in — this
+   answers the person's own action (clicking generate) rather than
+   decorating the page on load. Nothing else here animates on its own. */
+.tile-in{ animation:tileIn .35s cubic-bezier(.22,.85,.32,1) both; }
+@keyframes tileIn{
+  from{ opacity:0; transform:scale(.72); }
+  to{ opacity:1; transform:scale(1); }
+}
+
+/* ---- controls / hyperparams ---- */
+.deck{
+  display:grid;
+  grid-template-columns:1.1fr 1fr;
+  gap:22px;
+}
+@media (max-width:760px){ .deck{ grid-template-columns:1fr; } }
+
+.control-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+
+button{
+  font-family:var(--font-sans);
+  font-size:14px;
+  font-weight:600;
+  color:var(--ink);
+  background:var(--glass-strong);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:10px 18px;
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease, color .15s ease;
+  box-shadow:var(--shadow-chip);
+}
+button:hover:not(:disabled){
+  transform:translateY(-1px);
+  border-color:var(--violet);
+  color:var(--violet);
+  box-shadow:0 6px 16px rgba(108,99,255,0.18);
+}
+button:active:not(:disabled){ transform:translateY(0); }
+button:disabled{ opacity:0.4; cursor:not-allowed; }
+button.primary{
+  background:linear-gradient(135deg, var(--violet), #8A7EFF);
+  border-color:transparent;
+  color:#fff;
+  box-shadow:0 10px 24px -8px rgba(108,99,255,0.55);
+}
+button.primary:hover:not(:disabled){ color:#fff; box-shadow:0 12px 28px -8px rgba(108,99,255,0.65); }
+button.stop{ border-color:rgba(232,82,82,0.4); color:var(--coral); }
+button.stop:hover:not(:disabled){ border-color:var(--coral); color:var(--coral); box-shadow:0 6px 16px rgba(232,82,82,0.18); }
+
+.hp-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px 14px;
+  margin-bottom:14px;
+}
+.hp-grid label{ font-size:12px; color:var(--ink-dim); display:flex; flex-direction:column; gap:5px; }
+.hp-grid input{
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--ink);
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:8px 10px;
+}
+
+.progress-track{
+  height:7px;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:999px;
+  overflow:hidden;
+  margin-bottom:8px;
+}
+.progress-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--violet), var(--teal)); }
+
+#loss-canvas{
+  width:100%;
+  height:72px;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-top:10px;
+}
+
+.fineprint{ font-size:12px; color:var(--ink-dim); margin:12px 0 0; line-height:1.55; }
+
+/* ---- dataset stats ---- */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:10px;
+  margin-bottom:16px;
+}
+.stat{
+  padding:14px 8px;
+  text-align:center;
+  background:var(--paper-soft);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+}
+.stat.held{ background:var(--teal-soft); border-color:rgba(20,158,143,0.3); }
+.stat-value{ font-family:var(--font-mono); font-size:19px; font-weight:600; color:var(--ink); }
+.stat.held .stat-value{ color:var(--teal); }
+.stat-label{ font-size:11px; color:var(--ink-dim); margin-top:3px; }
+@media (max-width:520px){ .stat-grid{ grid-template-columns:repeat(2,1fr); } }
+
+details{ margin-top:10px; border:1px solid var(--line); border-radius:var(--radius-sm); padding:0; overflow:hidden; }
+summary{
+  cursor:pointer;
+  padding:10px 14px;
+  font-size:13px;
+  color:var(--ink-dim);
+  list-style:none;
+  background:var(--paper-soft);
+}
+summary::-webkit-details-marker{ display:none; }
+summary::before{ content:"▸ "; color:var(--violet); }
+details[open] summary::before{ content:"▾ "; }
+details[open] summary{ border-bottom:1px solid var(--line); }
+
+.thumb-grid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  padding:10px;
+  max-height:180px;
+  overflow-y:auto;
+  background:var(--paper);
+}
+.thumb-grid canvas{
+  image-rendering:pixelated;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:var(--paper-soft);
+}
+.thumb-grid.held canvas{ background:var(--teal-soft); border-color:rgba(20,158,143,0.25); }
+
+/* ---- match panel ---- */
+.panel.match{
+  border-color:rgba(31,163,94,0.35);
+  background:linear-gradient(180deg, rgba(31,163,94,0.10), var(--glass) 60%);
+  box-shadow:0 26px 60px -26px rgba(31,163,94,0.38), var(--shadow-panel);
+}
+.panel.match h2{ color:var(--match); }
+.match-compare{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  margin-bottom:14px;
+}
+@media (max-width:600px){ .match-compare{ grid-template-columns:1fr; } }
+.match-item{ text-align:center; }
+.match-item-label{ font-size:12.5px; color:var(--ink-dim); margin-bottom:10px; }
+.match-item-label.held{ color:var(--teal); font-weight:600; }
+.match-item canvas{
+  image-rendering:pixelated;
+  border:1px solid var(--line);
+  border-radius:16px;
+  max-width:100%;
+  background:var(--paper-soft);
+  box-shadow:0 10px 26px rgba(21,22,29,0.10);
+}
+.panel.match p:not(.mono-line){ font-size:14.5px; color:var(--ink-dim); line-height:1.6; }
+
+footer{
+  margin-top:16px;
+  font-size:12.5px;
+  color:var(--ink-dim);
+  text-align:center;
+}
+
+/* If you have a licensed copy of Roslindale, drop the woff2 files under
+   /fonts (sibling to /css and /js) and uncomment. It takes over from
+   Fraunces automatically since --font-display lists it first. */
+/*
+@font-face{
+  font-family:'Roslindale Display';
+  src:url('../fonts/RoslindaleDisplay-Regular.woff2') format('woff2');
+  font-weight:400 600;
+  font-style:normal;
+  font-display:swap;
+}
+*/

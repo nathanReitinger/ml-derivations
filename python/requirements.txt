@@ -1,0 +1,10 @@
+# Install with: pip install -r requirements.txt
+#
+# On macOS this pulls a normal, MPS-enabled torch build (no CUDA bloat —
+# that's a Linux-only concern). torch.backends.mps.is_available() is checked
+# automatically by train.py/search.py's --device auto.
+torch>=2.2
+
+# Only used by search.py to save example matched grids as PNGs; everything
+# else (training, search, scoring) works without it.
+Pillow>=10.0

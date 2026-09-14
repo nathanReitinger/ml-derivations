@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ascii diffusion — generate until it matches something it never saw</title>
+<meta name="description" content="A small, well-trained diffusion model trains live in your browser on 50 tiny (20×10, 2-symbol) ascii drawings — the rest of the pack is held out and never shown to it. Once training is actually good, it samples over and over, like a brute-force search, until one generation lands close — by SSIM — to a held-out drawing it never trained on.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="bg-scene" aria-hidden="true">
+  <span class="blob b1"></span>
+  <span class="blob b2"></span>
+  <span class="blob b3"></span>
+  <span class="blob b4"></span>
+</div>
+
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">▦</span> ascii diffusion</div>
+    <div class="readout" id="stats-readout">
+      <div class="readout-item">backend<span class="readout-value" id="stat-status">loading…</span></div>
+      <div class="readout-item">build<span class="readout-value" id="build-badge">—</span></div>
+    </div>
+  </header>
+
+  <section class="intro">
+    <h1>Small enough to reproduce what it never saw.</h1>
+    <p>It trains, right here in your browser, on 50 tiny ascii drawings — 20×10 characters, only two symbols. The rest of the pack is held out and never shown to it. Training doesn't stop on a step count; it stops once a quality gate confirms the model is actually good at this, checked only against the training set. Only then does it start generating, one drawing at a time, each one scored by SSIM against the held-out set. Generation stops the instant one lands close enough to a drawing the model never trained on.</p>
+    <p class="callout">That's the point being demonstrated: shrink the problem space enough — a small grid, two symbols, repetitive parametric shapes (boxes, rings, stripes) — and a generative model's outputs can land on data it was never trained on, purely because there are only so many ways to draw a ring of a given radius. It's a brute-force search either way, hashcat-style: same held-out target set the whole time, you just keep sampling until one attempt lands close enough. The threshold below controls how close "close" has to be.</p>
+  </section>
+
+  <section class="panel match" id="showcase-panel" hidden>
+    <div class="panel-head">
+      <h2>A match, found locally</h2>
+      <div class="mono-line" id="showcase-meta"></div>
+    </div>
+    <div class="match-compare">
+      <div class="match-item">
+        <div class="match-item-label">Generated</div>
+        <canvas id="showcase-generated-canvas"></canvas>
+      </div>
+      <div class="match-item">
+        <div class="match-item-label held">Held-out test file — <span id="showcase-filename"></span></div>
+        <canvas id="showcase-test-canvas"></canvas>
+      </div>
+    </div>
+    <p class="mono-line" id="showcase-score"></p>
+    <p>Found by running <code>python search.py</code> locally against a bigger, GPU-trained
+      model — not generated live in this tab. Load that same model below (Training panel →
+      Load pretrained) and press "Start generating" to watch the live version instead.</p>
+  </section>
+
+  <section class="panel hero" id="hero">
+    <div class="panel-head">
+      <h2>Generations</h2>
+      <div class="gen-status" id="gen-status">not started</div>
+    </div>
+    <div class="filmstrip" id="filmstrip" aria-live="polite"></div>
+    <div class="control-row">
+      <button id="btn-generate" class="primary" disabled>Start generating</button>
+      <button id="btn-stop" class="stop" disabled>Stop</button>
+      <label class="threshold-field">Match threshold (SSIM)
+        <input id="hp-threshold" type="number" value="0.97" min="0.5" max="1" step="0.01">
+      </label>
+    </div>
+    <p class="mono-line" id="best-status">No attempts yet.</p>
+  </section>
+
+  <section class="deck">
+    <div class="panel controls">
+      <div class="panel-head"><h2>Model</h2></div>
+      <div class="control-row" id="model-mode-row">
+        <button id="btn-mode-existing" class="primary">Use existing model</button>
+        <button id="btn-mode-train">Train your own</button>
+      </div>
+
+      <div id="mode-existing-content">
+        <p class="fineprint" id="pretrained-status">Checking for a pretrained model…</p>
+        <label class="file-field" id="load-weights-label">Or load a different weights.json
+          <input id="load-weights-file" type="file" accept="application/json,.json">
+        </label>
+      </div>
+
+      <div id="mode-train-content" hidden>
+        <div class="control-row">
+          <button id="btn-train" class="primary" disabled>Train model</button>
+          <button id="btn-train-more" hidden>Train more</button>
+        </div>
+        <div class="hp-grid">
+          <label>Max steps
+            <input id="hp-steps" type="number" value="6000" min="100" max="50000" step="100">
+          </label>
+          <label>Batch size
+            <input id="hp-batch" type="number" value="16" min="1" max="50">
+          </label>
+          <label>Hidden units
+            <input id="hp-hidden" type="number" value="32" min="8" max="128" step="8">
+          </label>
+          <label>Diffusion steps (T)
+            <input id="hp-timesteps" type="number" value="40" min="10" max="200" step="5">
+          </label>
+          <label>Learning rate
+            <input id="hp-lr" type="number" value="0.002" min="0.0001" max="0.02" step="0.0001">
+          </label>
+        </div>
+        <p class="fineprint">"Max steps" is a safety ceiling, not a target — training stops as soon as the quality gate below passes, however long that takes, or pauses here if the ceiling is hit first ("Train more" picks up right where it left off).</p>
+        <div class="progress-track"><div class="progress-fill" id="train-progress"></div></div>
+        <p class="mono-line" id="train-status">Loading dataset…</p>
+        <canvas id="loss-canvas"></canvas>
+
+        <details class="quality-gate" open>
+          <summary>Quality gate</summary>
+          <p class="fineprint">Every few steps, the half-trained model generates a handful of samples and each is scored against its closest <strong>training</strong> image only — the held-out test set is never touched here, or the "never trained on" claim below would mean nothing. Training stops once that score is actually good, made concrete instead of left to a step count.</p>
+          <div class="hp-grid">
+            <label>Target quality (SSIM)
+              <input id="hp-train-target" type="number" value="0.9" min="0.3" max="1" step="0.01">
+            </label>
+            <label>Check every (steps)
+              <input id="hp-eval-every" type="number" value="200" min="20" max="2000" step="20">
+            </label>
+            <label>Samples per check
+              <input id="hp-eval-samples" type="number" value="6" min="2" max="20">
+            </label>
+          </div>
+          <p class="mono-line" id="quality-status">not started</p>
+          <div class="filmstrip small" id="train-preview" aria-live="polite"></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="panel dataset">
+      <div class="panel-head"><h2>Dataset</h2></div>
+      <div class="stat-grid">
+        <div class="stat"><div class="stat-value" id="stat-train">–</div><div class="stat-label">train</div></div>
+        <div class="stat held"><div class="stat-value" id="stat-test">–</div><div class="stat-label">test, held out</div></div>
+        <div class="stat"><div class="stat-value" id="stat-vocab">–</div><div class="stat-label">characters</div></div>
+        <div class="stat"><div class="stat-value" id="stat-grid">–</div><div class="stat-label">grid size</div></div>
+      </div>
+      <details>
+        <summary>View training set</summary>
+        <div class="thumb-grid" id="train-gallery"></div>
+      </details>
+      <details>
+        <summary>View held-out test set</summary>
+        <div class="thumb-grid held" id="test-gallery"></div>
+      </details>
+      <p class="fineprint" id="backend-note"></p>
+    </div>
+  </section>
+
+  <section class="panel match" id="match-panel" hidden>
+    <div class="panel-head">
+      <h2>Close match found</h2>
+      <div class="mono-line" id="match-meta"></div>
+    </div>
+    <div class="match-compare">
+      <div class="match-item">
+        <div class="match-item-label">Generated</div>
+        <canvas id="match-generated-canvas"></canvas>
+      </div>
+      <div class="match-item">
+        <div class="match-item-label held">Held-out test file — <span id="match-filename"></span></div>
+        <canvas id="match-test-canvas"></canvas>
+      </div>
+    </div>
+    <p class="mono-line" id="match-score"></p>
+    <p>This drawing lived in the half of the dataset the model never trained on. Everything the model learned came from the training set — reverse diffusion, starting from fresh noise, landed close to this one on its own.</p>
+    <div class="control-row">
+      <button id="btn-download-match">Download this generation</button>
+      <button id="btn-continue">Keep generating</button>
+    </div>
+  </section>
+
+  <footer>Trains and runs entirely in your browser via TensorFlow.js. No data leaves your machine.</footer>
+</div>
+
+<script src="js/build.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="js/model.js"></script>
+<script src="js/data.js"></script>
+<script src="js/render.js"></script>
+<script src="js/similarity.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
