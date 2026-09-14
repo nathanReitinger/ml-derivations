@@ -95,8 +95,12 @@ lets a model trained there load straight into this browser page.
   **automatically** — visitors land on "Use existing model" already active,
   no click needed. A "Train your own" button next to it switches to the
   original full in-browser training UI at any time; a file picker under
-  "Use existing model" also accepts loading a single legacy `weights.json`
-  you have locally, without committing it.
+  "Use existing model" also accepts loading a model directly from disk
+  without committing it: either a single legacy `weights.json`, or
+  `manifest.json` selected together with all of its `part-NNN.txt` files
+  (select the whole `weights/` folder's contents at once, e.g. Cmd/Ctrl-A
+  inside it) — picking `manifest.json` by itself isn't enough on its own,
+  since the weights themselves live in the part files.
 
 Full walkthrough, flags, and what to actually expect timing-wise:
 **[README_LOCAL.md](README_LOCAL.md)**.

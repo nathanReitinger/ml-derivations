@@ -443,20 +443,50 @@
       `${meta.bottleneckBlocks}×kernel-${meta.bottleneckKernel} bottleneck, step ${state.stepCount.toLocaleString()}${qualityNote}.`;
   }
 
+  // Accepts either one legacy combined weights.json, or manifest.json
+  // selected together with every part-NNN.txt it lists (train.py's
+  // current default output - select them all at once in the file dialog,
+  // e.g. Cmd/Ctrl-click each, or Cmd/Ctrl-A inside the weights/ folder).
+  // Reassembled purely from what was selected - no network fetch, so this
+  // works for any weights/ folder on disk, not just ones a server happens
+  // to be serving.
   async function handleLoadWeightsFile(e) {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    els.pretrainedStatus.textContent = `Reading ${file.name}…`;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const label = files.length === 1 ? files[0].name : `${files.length} files`;
+    els.pretrainedStatus.textContent = `Reading ${label}…`;
     try {
-      const bundle = JSON.parse(await file.text());
-      els.pretrainedStatus.textContent = applyWeightsBundle(bundle, file.name);
+      const manifestFile = files.find((f) => f.name.endsWith('manifest.json'));
+      let bundle;
+      if (manifestFile) {
+        const manifest = JSON.parse(await manifestFile.text());
+        if (!manifest.chunkFiles) throw new Error('manifest.json is missing chunkFiles - not a recognized manifest');
+        const byName = new Map(files.map((f) => [f.name, f]));
+        const missing = manifest.chunkFiles.filter((name) => !byName.has(name));
+        if (missing.length) {
+          throw new Error(
+            `manifest.json needs its part file(s) selected too, in the same file dialog — missing: ${missing.join(', ')}. ` +
+            `Select the whole weights/ folder's contents at once (manifest.json + every part-NNN.txt).`
+          );
+        }
+        const parts = await Promise.all(manifest.chunkFiles.map((name) => byName.get(name).text()));
+        const parsed = JSON.parse(parts.join(''));
+        bundle = { meta: manifest.meta, weights: parsed.weights };
+      } else if (files.length === 1) {
+        bundle = JSON.parse(await files[0].text());
+      } else {
+        throw new Error(
+          'select either one weights.json file, or a manifest.json together with all of its part-NNN.txt files'
+        );
+      }
+      els.pretrainedStatus.textContent = applyWeightsBundle(bundle, label);
       setMode('existing');
     } catch (err) {
       console.error(err);
-      els.pretrainedStatus.textContent = `Could not load ${file.name}: ${err.message}`;
+      els.pretrainedStatus.textContent = `Could not load ${label}: ${err.message}`;
       els.btnTrain.disabled = false;
     } finally {
-      e.target.value = ''; // allow re-selecting the same file later
+      e.target.value = ''; // allow re-selecting the same file(s) later
     }
   }
 

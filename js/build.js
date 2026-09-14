@@ -5,4 +5,4 @@
 // hard-refresh the live site and confirm the version you just pushed is
 // actually the one showing - proving a deploy landed, independent of
 // whatever a CDN/browser cache thinks is current.
-window.BUILD_ID = 'v2.1 · 2026-09-14';
+window.BUILD_ID = 'v2.2 · 2026-09-14';

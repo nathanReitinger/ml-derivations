@@ -1,10 +1,10 @@
 {
   "name": "ascii-diffusion",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Browser-only site needs no npm install (tf.js loads from the CDN tag in index.html). These deps are only for the node-side regression tests in tests/.",
   "scripts": {
-    "test": "node tests/slice_decode.test.js && node tests/loadweights.test.js && node tests/autoload_pretrained.test.js && node tests/chunked_e2e.test.js && node tests/e2e_dom.test.js"
+    "test": "node tests/slice_decode.test.js && node tests/loadweights.test.js && node tests/autoload_pretrained.test.js && node tests/chunked_e2e.test.js && node tests/manual_chunked_picker.test.js && node tests/e2e_dom.test.js"
   },
   "devDependencies": {
     "@tensorflow/tfjs": "^4.22.0",
